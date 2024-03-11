@@ -21,16 +21,6 @@ const getIndex = (row, column) => {
     return row * width + column;
 };
 
-//loop where the game is rendered continuously
-const renderLoop = () => {
-  universe.tick();
-
-  drawGrid();
-  drawCells();
-
-  requestAnimationFrame(renderLoop);
-};
-
 //draw the grid
 const drawGrid = () => {
     ctx.beginPath();
@@ -76,10 +66,71 @@ const drawCells = () => {
     }
 
     ctx.stroke();
+  };
+
+//var for if the game is paused
+let animationId = null;
+
+//loop where the game is rendered continuously
+const renderLoop = () => {
+  debugger;
+  universe.tick();
+
+  drawGrid();
+  drawCells();
+
+  animationId = requestAnimationFrame(renderLoop);
 };
 
-//start the render loop
-drawGrid();
-drawCells();
-requestAnimationFrame(renderLoop);
+//return true if game is paused
+const isPaused = () => {
+  return animationId === null;
+};
 
+//js code for the play/pause button
+const playPauseButton = document.getElementById("play-pause");
+
+//change button, continue game
+const play = () => {
+    playPauseButton.textContent = "⏸";
+    renderLoop();
+  };
+
+//change button, stop game,
+const pause = () => {
+    playPauseButton.textContent = "▶";
+    cancelAnimationFrame(animationId);
+    animationId = null;
+};
+
+//run the appropriate function when the button is clicked
+playPauseButton.addEventListener("click", event => {
+    if (isPaused()) {
+      play();
+    } else {
+      pause();
+    }
+});
+
+//allows individual cells to be toggled
+canvas.addEventListener("click", event => {
+    const boundingRect = canvas.getBoundingClientRect();
+
+    const scaleX = canvas.width / boundingRect.width;
+    const scaleY = canvas.height / boundingRect.height;
+
+    const canvasLeft = (event.clientX - boundingRect.left) * scaleX;
+    const canvasTop = (event.clientY - boundingRect.top) * scaleY;
+
+    const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
+    const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
+
+    universe.toggle_cell(row, col);
+
+    drawGrid();
+    drawCells();
+  });
+
+
+//start the render loop
+play();
